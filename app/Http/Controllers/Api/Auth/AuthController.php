@@ -36,7 +36,7 @@ class AuthController extends Controller
 
             $data = User::where('id', $user->id)->first();
             $success = [
-                "token" => $data->createToken('systemWhatsapp')->plainTextToken,
+                "token" => $data->createToken('nameToken')->plainTextToken,
                 "user"  => $data
             ];
 
@@ -55,11 +55,29 @@ class AuthController extends Controller
     /**
      * Method to authenticate users.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\Auth\LoginRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        return "login";
+        try {
+            $user = User::where('email', $request->email)->first();
+            if (! $user || ! Hash::check($request->password, $user->password)) {
+                throw new Exception('No autorizado');
+            }
+            $success = [
+                "token" => $user->createToken('nameToken')->plainTextToken,
+                "user"  => $user
+            ];
+            return response()->json([
+                "message" => 'Inicio de sesión con éxito',
+                "data" => $success
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'error'  => 'auth.login.failed',
+                'message' => $e->getMessage()
+            ], $e->getCode() ? $e->getCode() : 401);
+        }
     }
 }
